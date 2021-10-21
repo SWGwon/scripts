@@ -5,6 +5,8 @@ SFGD_FRAMEWORK=$1
 DATAPATH=$2
 MCR=$3
 
+SCRIPTPWD=$(pwd)
+
 cd ${SFGD_FRAMEWORK}/data_preprocessing/bin
 
 echo "ls -1  ${DATAPATH}/*.daq | grep -v Slot > data_file.list"
@@ -26,6 +28,8 @@ echo "./Calibration ${DATAPATH}/*__raw.root 55 50"
 ./Calibration ${DATAPATH}/*__raw.root 55 50
 echo "./EventStructure ${DATAPATH}/*calib.root USJ"
 ./EventStructure ${DATAPATH}/*calib.root USJ
+
+cd ${SCRIPTPWD}
 
 #rm data_file.list
 #rm febs_files_list.list
