@@ -21,9 +21,6 @@ ls  ${DATAPATH}/*Slot* > febs_files_list.list
 echo "./unpack –f d"
 ./unpack # –f d
 
-#echo "ls -1 ${DATAPATH}/${MCR}*_raw.root > data_raw_file.list"
-    #echo "${SFGD_FRAMEWORK}/data_preprocessing/bin/Calibration $i < RUN_CALIBRATION"
-    #${SFGD_FRAMEWORK}/data_preprocessing/bin/Calibration $i < RUN_CALIBRATION
 echo "./Calibration ${DATAPATH}/*__raw.root 55 50"
 ./Calibration ${DATAPATH}/*__raw.root 55 50
 echo "./EventStructure ${DATAPATH}/*calib.root USJ"
@@ -31,6 +28,5 @@ echo "./EventStructure ${DATAPATH}/*calib.root USJ"
 
 cd ${SCRIPTPWD}
 
-#rm data_file.list
-#rm febs_files_list.list
-#rm data_raw_file.list
+rm data_file.list
+rm febs_files_list.list
