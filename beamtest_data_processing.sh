@@ -26,7 +26,7 @@ echo "./Calibration ${DATAPATH}/*__raw.root 55 50"
 echo "./EventStructure ${DATAPATH}/*calib.root USJ"
 ./EventStructure ${DATAPATH}/*calib.root USJ
 
-cd ${SCRIPTPWD}
-
 rm data_file.list
 rm febs_files_list.list
+
+cd ${SCRIPTPWD}
