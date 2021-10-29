@@ -24,8 +24,8 @@ def run_gen( sh, args ):
     print >> sh, "gevgen_fnal \\"
     print >> sh, "    -f flux_files/%s*,DUNEND \\" % flux
     if args.anti_fiducial:
-        print "TEST ANTI FIDUCIAL:nd_hall_with_anti_fiducial_lar_tms_nosand.gdml"
-        print >> sh, "    -g ${ND_PRODUCTION_GDML}/nd_hall_with_anti_fiducial_lar_tms_nosand.gdml \\"
+        print "USING ANTI FIDUCIAL:anti_fiducial_%s.gdml" % args.geometry
+        print >> sh, "    -g ${ND_PRODUCTION_GDML}/anti_fiducial_%s.gdml \\" % args.geometry
     else:
         print >> sh, "    -g ${ND_PRODUCTION_GDML}/%s.gdml \\" % args.geometry
     print >> sh, "    -t %s \\" % args.topvol
@@ -214,7 +214,7 @@ if __name__ == "__main__":
         if args.sam_name is not None:
             # generate a unique file name with the timestamp
             if args.anti_fiducial:
-                copylines.append( "generate_sam_json ${GHEP_FILE} ${RUN} ${NSPILL} \"generated\" %s %1.2f %s %s %1.1f %d %s %s %s %s %s %s %s\n" % (args.sam_name, args.oa, args.topvol, "nd_hall_with_anti_fiducial_lar_tms_nosand", hc, fluxid, args.data_stream, args.file_format, args.application_family, args.application_name, args.application_version, args.campaign, args.requestid) )
+                copylines.append( "generate_sam_json ${GHEP_FILE} ${RUN} ${NSPILL} \"generated\" %s %1.2f %s %s %1.1f %d %s %s %s %s %s %s %s\n" % (args.sam_name, args.oa, args.topvol, "anti_fiducial_"+args.geometry, hc, fluxid, args.data_stream, args.file_format, args.application_family, args.application_name, args.application_version, args.campaign, args.requestid) )
             else:
                 copylines.append( "generate_sam_json ${GHEP_FILE} ${RUN} ${NSPILL} \"generated\" %s %1.2f %s %s %1.1f %d %s %s %s %s %s %s %s\n" % (args.sam_name, args.oa, args.topvol, args.geometry, hc, fluxid, args.data_stream, args.file_format, args.application_family, args.application_name, args.application_version, args.campaign, args.requestid) )
             copylines.append( "ifdh cp ${GHEP_FILE} %s/${GHEP_FILE}\n" % args.dropbox_dir )
