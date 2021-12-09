@@ -21,10 +21,15 @@ ls  ${DATAPATH}/*Slot* > febs_files_list.list
 echo "./unpack –f d"
 ./unpack # –f d
 
+rm ${DATAPATH}/*Slot*
+
 echo "./Calibration ${DATAPATH}/*__raw.root 55 50"
 ./Calibration ${DATAPATH}/*__raw.root 55 50
+rm ${DATAPATH}/*raw.root
+
 echo "./EventStructure ${DATAPATH}/*calib.root USJ"
 ./EventStructure ${DATAPATH}/*calib.root USJ
+rm ${DATAPATH}/*calib.root
 
 rm data_file.list
 rm febs_files_list.list

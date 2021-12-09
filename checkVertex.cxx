@@ -1,7 +1,10 @@
 #include "/nashome/s/sgwon/edep-sim/io/TG4Event.h"
 
-TVector3 GetMaxPositionX(const TG4Event& inputEvent);
-TVector3 GetMinPositionX(const TG4Event& inputEvent);
+TG4Event* event = NULL; 
+
+TVector3 GetMaxPositionX(TTree& inputTree);
+TVector3 GetMinPositionX(TTree& inputTree);
+std::pair<TVector3, TVector3> GetMaxMinPositionX(TTree& inputTree);
 
 void checkVertex(std::string inputFileName) 
 {
@@ -11,18 +14,20 @@ void checkVertex(std::string inputFileName)
         exit(0);
     }
     TTree* tree = (TTree*)file->Get("EDepSimEvents");
-    TG4Event* event = NULL; tree->SetBranchAddress("Event",&event);
+    tree->SetBranchAddress("Event",&event);
 
-    tree->GetEntry(0);
-    TVector3 max = GetMaxPositionX(*event);
-    TVector3 min = GetMinPositionX(*event);
+    std::pair<TVector3, TVector3> max_min = GetMaxMinPositionX(*tree);
+    //TVector3 max = GetMaxPositionX(*tree);
+    //TVector3 min = GetMinPositionX(*tree);
+    TVector3 max = max_min.first;
+    TVector3 min = max_min.second;
 
     std::cout << "max: " << max.X() << ", " << max.Y() << ", " << max.Z() << std::endl;
     std::cout << "min: " << min.X() << ", " << min.Y() << ", " << min.Z() << std::endl;
 
-    TH2D* xy = new TH2D("xy", "hit xy", 100, min.X(), max.X(), 100, min.Y(), max.Y());
-    TH2D* xz = new TH2D("xy", "hit xz", 100, min.X(), max.X(), 100, min.Z(), max.Z());
-    TH2D* yz = new TH2D("xy", "hit yz", 100, min.Y(), max.Y(), 100, min.Z(), max.Z());
+    TH2D* xy = new TH2D("xy", "hit xy;x;y", 100, min.X()-500, max.X()+500, 100, min.Y()-500, max.Y()+500);
+    TH2D* xz = new TH2D("xz", "hit xz;x;z", 100, min.X()-500, max.X()+500, 100, min.Z()-500, max.Z()+500);
+    TH2D* yz = new TH2D("yz", "hit yz;y;z", 100, min.Y()-500, max.Y()+500, 100, min.Z()-500, max.Z()+500);
 
     for (int i = 0; i < tree->GetEntries(); ++i) {
         std::cout << "event#" << i << std::endl;
@@ -37,28 +42,34 @@ void checkVertex(std::string inputFileName)
         }
     }
 
-    TCanvas* can = new TCanvas;
-    can->Divide(2,2);
-    can->cd(1);
+    TCanvas can;
+    can.Divide(2,2);
+    can.cd(1);
     xy->Draw("colz");
-    can->cd(2);
+    can.cd(2);
     yz->Draw("colz");
-    can->cd(3);
+    can.cd(3);
     xz->Draw("colz");
+    can.SaveAs("hitPosition.pdf");
+    exit(0);
 }
 
-TVector3 GetMaxPositionX(const TG4Event& inputEvent) {
+TVector3 GetMaxPositionX(TTree& inputTree) {
     TVector3 tempMaxVector;
-    for (auto sd : inputEvent.SegmentDetectors) {
-        for (Int_t i = 0; i < (int)sd.second.size(); i++) {
-            if (tempMaxVector.X() < sd.second[i].GetStart().X()) {
-                tempMaxVector.SetX(sd.second[i].GetStart().X());
-            }
-            if (tempMaxVector.Y() < sd.second[i].GetStart().Y()) {
-                tempMaxVector.SetY(sd.second[i].GetStart().Y());
-            }
-            if (tempMaxVector.Z() < sd.second[i].GetStart().Z()) {
-                tempMaxVector.SetZ(sd.second[i].GetStart().Z());
+    for (int i = 0; i < inputTree.GetEntries(); ++i) {
+        std::cout << "event#" << i << std::endl;
+        inputTree.GetEntry(i);
+        for (auto sd : event->SegmentDetectors) {
+            for (Int_t j = 0; j < (int)sd.second.size(); j++) {
+                if (tempMaxVector.X() < sd.second[j].GetStart().X()) {
+                    tempMaxVector.SetX(sd.second[j].GetStart().X());
+                }
+                if (tempMaxVector.Y() < sd.second[j].GetStart().Y()) {
+                    tempMaxVector.SetY(sd.second[j].GetStart().Y());
+                }
+                if (tempMaxVector.Z() < sd.second[j].GetStart().Z()) {
+                    tempMaxVector.SetZ(sd.second[j].GetStart().Z());
+                }
             }
         }
     }
@@ -66,21 +77,63 @@ TVector3 GetMaxPositionX(const TG4Event& inputEvent) {
     return tempMaxVector;
 }
 
-TVector3 GetMinPositionX(const TG4Event& inputEvent) {
+TVector3 GetMinPositionX(TTree& inputTree) {
     TVector3 tempMinVector;
-    for (auto sd : inputEvent.SegmentDetectors) {
-        for (Int_t i = 0; i < (int)sd.second.size(); i++) {
-            if (tempMinVector.X() > sd.second[i].GetStart().X()) {
-                tempMinVector.SetX(sd.second[i].GetStart().X());
-            }
-            if (tempMinVector.Y() > sd.second[i].GetStart().Y()) {
-                tempMinVector.SetY(sd.second[i].GetStart().Y());
-            }
-            if (tempMinVector.Z() > sd.second[i].GetStart().Z()) {
-                tempMinVector.SetZ(sd.second[i].GetStart().Z());
+    for (int i = 0; i < inputTree.GetEntries(); ++i) {
+        std::cout << "event#" << i << std::endl;
+        inputTree.GetEntry(i);
+        for (auto sd : event->SegmentDetectors) {
+            for (Int_t j = 0; j < (int)sd.second.size(); j++) {
+                if (tempMinVector.X() > sd.second[j].GetStart().X()) {
+                    tempMinVector.SetX(sd.second[j].GetStart().X());
+                }
+                if (tempMinVector.Y() > sd.second[j].GetStart().Y()) {
+                    tempMinVector.SetY(sd.second[j].GetStart().Y());
+                }
+                if (tempMinVector.Z() > sd.second[j].GetStart().Z()) {
+                    tempMinVector.SetZ(sd.second[j].GetStart().Z());
+                }
             }
         }
     }
 
     return tempMinVector;
+}
+
+std::pair<TVector3, TVector3> GetMaxMinPositionX(TTree& inputTree) {
+    TVector3 tempMaxVector;
+    TVector3 tempMinVector;
+
+    for (int i = 0; i < inputTree.GetEntries(); ++i) {
+        std::cout << "event#" << i << std::endl;
+        inputTree.GetEntry(i);
+        for (auto sd : event->SegmentDetectors) {
+            for (Int_t j = 0; j < (int)sd.second.size(); j++) {
+                if (tempMaxVector.X() < sd.second[j].GetStart().X()) {
+                    tempMaxVector.SetX(sd.second[j].GetStart().X());
+                }
+                if (tempMaxVector.Y() < sd.second[j].GetStart().Y()) {
+                    tempMaxVector.SetY(sd.second[j].GetStart().Y());
+                }
+                if (tempMaxVector.Z() < sd.second[j].GetStart().Z()) {
+                    tempMaxVector.SetZ(sd.second[j].GetStart().Z());
+                }
+                if (tempMinVector.X() > sd.second[j].GetStart().X()) {
+                    tempMinVector.SetX(sd.second[j].GetStart().X());
+                }
+                if (tempMinVector.Y() > sd.second[j].GetStart().Y()) {
+                    tempMinVector.SetY(sd.second[j].GetStart().Y());
+                }
+                if (tempMinVector.Z() > sd.second[j].GetStart().Z()) {
+                    tempMinVector.SetZ(sd.second[j].GetStart().Z());
+                }
+            }
+        }
+    }
+
+    std::pair<TVector3, TVector3> tempPair;
+    tempPair.first = tempMaxVector;
+    tempPair.second = tempMinVector;
+
+    return tempPair;
 }
