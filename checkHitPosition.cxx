@@ -15,12 +15,6 @@ void checkVertex(std::string inputFileName) {
     TTree* tree = (TTree*)file->Get("EDepSimEvents");
     tree->SetBranchAddress("Event",&event);
 
-    std::pair<TVector3, TVector3> max_min = GetMaxMinPositionX(*tree);
-    //TVector3 max = GetMaxPositionX(*tree);
-    //TVector3 min = GetMinPositionX(*tree);
-    TVector3 max = max_min.first;
-    TVector3 min = max_min.second;
-
     std::cout << "max: " << max.X() << ", " << max.Y() << ", " << max.Z() << std::endl;
     std::cout << "min: " << min.X() << ", " << min.Y() << ", " << min.Z() << std::endl;
 
