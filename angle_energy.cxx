@@ -6,6 +6,56 @@
 #include "/Users/gwon/beamtest/neutronselection/utils/FindGeometricProperties.cc"
 #include "/Users/gwon/beamtest/neutronselection/utils/FindClusters.cc"
 
+//in MeV unit
+double Weight(double inputEnergy) {
+    double output;
+    auto bFlux = std::make_unique<TGraph> (41);
+    bFlux->SetPoint(1, 0 ,  1.26E-001);
+    bFlux->SetPoint(2, 1.42E-001 ,  1.35E-001);
+    bFlux->SetPoint(3, 1.79E-001 ,  1.35E-001);
+    bFlux->SetPoint(4, 2.25E-001 ,  1.40E-001);
+    bFlux->SetPoint(5, 2.84E-001 ,  1.44E-001);
+    bFlux->SetPoint(6, 3.57E-001 ,  1.42E-001);
+    bFlux->SetPoint(7, 4.50E-001 ,  1.41E-001);
+    bFlux->SetPoint(8, 5.66E-001 ,  1.42E-001);
+    bFlux->SetPoint(9, 7.13E-001 ,  1.30E-001);
+    bFlux->SetPoint(10,8.97E-001 ,  1.17E-001);
+    bFlux->SetPoint(11,1.13E+000 ,  9.66E-002);
+    bFlux->SetPoint(12,1.42E+000 ,  7.64E-002);
+    bFlux->SetPoint(13,1.79E+000 ,  6.59E-002);
+    bFlux->SetPoint(14,2.25E+000 ,  5.34E-002);
+    bFlux->SetPoint(15,2.84E+000 ,  4.27E-002);
+    bFlux->SetPoint(16,3.57E+000 ,  3.36E-002);
+    bFlux->SetPoint(17,4.50E+000 ,  2.73E-002);
+    bFlux->SetPoint(18,5.66E+000 ,  1.97E-002);
+    bFlux->SetPoint(19,7.13E+000 ,  1.39E-002);
+    bFlux->SetPoint(20,8.97E+000 ,  9.51E-003);
+    bFlux->SetPoint(21,1.13E+001 ,  6.26E-003);
+    bFlux->SetPoint(22,1.42E+001 ,  4.00E-003);
+    bFlux->SetPoint(23,1.79E+001 ,  2.61E-003);
+    bFlux->SetPoint(24,2.26E+001 ,  2.13E-003);
+    bFlux->SetPoint(25,2.84E+001 ,  1.59E-003);
+    bFlux->SetPoint(26,3.57E+001 ,  1.30E-003);
+    bFlux->SetPoint(27,4.50E+001 ,  1.05E-003);
+    bFlux->SetPoint(28,5.66E+001 ,  8.59E-004);
+    bFlux->SetPoint(29,7.13E+001 ,  7.47E-004);
+    bFlux->SetPoint(30,8.97E+001 ,  5.93E-004);
+    bFlux->SetPoint(31,1.13E+002 ,  5.53E-004);
+    bFlux->SetPoint(32,1.42E+002 ,  4.69E-004);
+    bFlux->SetPoint(33,1.79E+002 ,  3.93E-004);
+    bFlux->SetPoint(34,2.25E+002 ,  3.24E-004);
+    bFlux->SetPoint(35,2.84E+002 ,  2.67E-004);
+    bFlux->SetPoint(36,3.57E+002 ,  1.88E-004);
+    bFlux->SetPoint(37,4.50E+002 ,  9.76E-005);
+    bFlux->SetPoint(38,5.38E+002 ,  9.08E-005);
+    bFlux->SetPoint(39,6.13E+002 ,  1.38E-004);
+    bFlux->SetPoint(40,6.88E+002 ,  9.64E-005);
+    bFlux->SetPoint(41,7.63E+002 ,  1.57E-005);
+    output = bFlux->Eval(inputEnergy);
+
+    return output;
+}
+
 bool ApplyingCuts(const vector<VoxelManager*>& inVoxels, bool isUSJ) {
     if (inVoxels.size() < 3) return false;
 
@@ -24,6 +74,10 @@ bool ApplyingCuts(const vector<VoxelManager*>& inVoxels, bool isUSJ) {
     }
 
     return true;
+}
+
+double GetEnergy(double inPE) {
+    return 7./8*inPE + 100 - 125*7;
 }
 
 //simulation data
@@ -86,6 +140,8 @@ void angle_energy(std::string inputFileName) {
 
     TH1D* angle = new TH1D("angle", "angle", 50,0,0);
     TH1D* energy = new TH1D("energy", "energy", 20,0,0);
+    TH1D* energy_inMeV = new TH1D("energy_inMeV", "energy_inMeV", 20,0,0);
+
 
     TVector3 beamLine;
     beamLine.SetX(0);
@@ -121,7 +177,6 @@ void angle_energy(std::string inputFileName) {
                 point2.SetY(pointPositionY[i]);
                 point2.SetZ(pointPositionZ[i]);
             }
-            std::cout << pointProcess[i] << std::endl;
             if (pointProcess[i] == 4) {
                 isHadron = true;
             } else {
@@ -139,9 +194,19 @@ void angle_energy(std::string inputFileName) {
             neutronLine.SetZ(point1.Z() - point2.Z());
         }
         double ang = beamLine.Angle(neutronLine);
-        std::cout << "ang: " << ang << std::endl;
-        angle->Fill(ang);
+        //std::cout << "ang: " << ang << std::endl;
+        double tempE = GetEnergy(fsE[0]);
+        double tempWeight = Weight(tempE);
+        //double tempWeight = 1;
+        std::cout << "tempE: " << tempE << std::endl;
+        std::cout << "tempWeight: " << tempWeight << std::endl;
+        angle->Fill(ang, tempWeight);
+        energy->Fill(tempE, tempWeight);
+        energy_inMeV->Fill(tempE);
     }
+
+    angle->Sumw2(0);
+    energy->Sumw2(0);
 
     TCanvas* can = new TCanvas();
     can->Divide(2,1);
@@ -150,36 +215,45 @@ void angle_energy(std::string inputFileName) {
     can->cd(2);
     energy->Draw();
 
+
+    TCanvas* can1 = new TCanvas();
+    energy_inMeV->Draw();
+
 }
 
+void DoData();
+
 void angle_energy() {
+    //DoData();
     TH1D* angle = new TH1D("angle", "angle", 50,0,0);
     TH1D* energy = new TH1D("energy", "energy", 20,0,0);
     double threshold = 20;
+    //TFile *SFGDinputFile  = new TFile("/pnfs/dune/persistent/users/sgwon/beamTest2020/MC/edep/PROD3/MC_EventStructure/SFGDoutput.root");
+    //TFile *USJinputFile  = new TFile("/pnfs/dune/persistent/users/sgwon/beamTest2020/MC/edep/PROD3/MC_EventStructure/USJoutput.root");
     TFile *SFGDinputFile  = new TFile("/Users/gwon/beamtest/MC/test/neutronShoot/SFGDoutput.root","READ");
+    TFile *USJinputFile  = new TFile("/Users/gwon/beamtest/MC/test/neutronShoot/USJoutput.root","READ");
     TTree* SFGDtree = (TTree*) SFGDinputFile->Get("AllEvents");
     Event* SFGDunpackEvent = new Event(); SFGDtree->SetBranchAddress("Event", &SFGDunpackEvent);
 
-    TFile *USJinputFile  = new TFile("/Users/gwon/beamtest/MC/test/neutronShoot/USJoutput.root","READ");
     TTree* USJtree = (TTree*) USJinputFile->Get("AllEvents");
     Event* USJunpackEvent = new Event(); USJtree->SetBranchAddress("Event", &USJunpackEvent);
     for (int iev = 0; iev < 1000; iev++) {
         SFGDtree->GetEntry(iev);
-        std::cout << "SFGDunpackEvent->GetEventID():" << SFGDunpackEvent->GetEventID() << std::endl;
+        //std::cout << "SFGDunpackEvent->GetEventID():" << SFGDunpackEvent->GetEventID() << std::endl;
         USJtree->GetEntry(iev);
-        std::cout << "USJunpackEvent->GetEventID():" << USJunpackEvent->GetEventID() << std::endl;
+        //std::cout << "USJunpackEvent->GetEventID():" << USJunpackEvent->GetEventID() << std::endl;
         std::cout << "iev: " << iev << std::endl;
 
-        vector<Hit*> usjHits = {};
-        TClonesArray * USJunpackHits = USJunpackEvent->GetHits();
-        int USJN = USJunpackEvent->GetNHits();
-        for (int i = 0; i < USJN; ++i) {
-            Hit* tempHit = (Hit*)USJunpackEvent->GetHits()->At(i);
+        //vector<Hit*> usjHits = {};
+        //TClonesArray * USJunpackHits = USJunpackEvent->GetHits();
+        //int USJN = USJunpackEvent->GetNHits();
+        //for (int i = 0; i < USJN; ++i) {
+        //    Hit* tempHit = (Hit*)USJunpackEvent->GetHits()->At(i);
 
-            if (tempHit->GetPE() > threshold) {
-                usjHits.push_back(tempHit);
-            }
-        }
+        //    if (tempHit->GetPE() > threshold) {
+        //        usjHits.push_back(tempHit);
+        //    }
+        //}
 
         vector<Hit*> sfgdHits = {};
         TClonesArray * SFGDunpackHits = SFGDunpackEvent->GetHits();
@@ -189,6 +263,165 @@ void angle_energy() {
 
             if (tempHit->GetPE() > threshold) {
                 sfgdHits.push_back(tempHit);
+            }
+        }
+
+        //vector<VoxelManager*> usjVoxels;
+        vector<VoxelManager*> sfgdVoxels;
+        //usjVoxels = MakeHitsToVoxels(usjHits, 1);
+        sfgdVoxels = MakeHitsToVoxels(sfgdHits, 1);
+        
+        //second : method, third: minimum voxel require, max distance  to find cluster
+        //std::vector<vector<VoxelManager*>> usjClusters = FindClusters(usjVoxels, 1, 0, 1.8);
+        std::vector<vector<VoxelManager*>> sfgdClusters = FindClusters(sfgdVoxels, 1, 0, 1.8);
+
+        //std::cout << "sfgdClusters.size(): " << sfgdClusters.size() << std::endl;
+
+        std::vector<vector<VoxelManager*>> sfgdClustersVector;
+        for (const auto& c : sfgdClusters) {
+            if (c.size() < 3) continue;
+
+            vector<double> geop = FindGeometricProperties(c, 3); //3 linear
+            if (geop[0] < 0.9 ) continue;
+
+            vector<double> voxs = FindGeometricProperties(c, 1); //1=fat
+            if (voxs[0] > 2) continue;
+
+            sfgdClustersVector.push_back(c);
+        }
+
+        std::cout << "sfgdClustersVector.size(): " << sfgdClustersVector.size() << std::endl;
+        /*
+
+        TVector3 beamLine;
+        beamLine.SetX(0);
+        beamLine.SetY(0);
+        beamLine.SetZ(1);
+
+        if (usjClusters.size() + sfgdClusters.size() == 2) {
+            if (usjClusters.size() == 2) {
+                vector<VoxelManager*> tempVoxel1 = usjClusters[0];
+                vector<VoxelManager*> tempVoxel2 = usjClusters[1];
+                TVector3 point1;
+                point1.SetX(tempVoxel1.at(0)->GetX());
+                point1.SetY(tempVoxel1.at(0)->GetY());
+                point1.SetZ(tempVoxel1.at(0)->GetZ());
+                TVector3 point2;
+                point2.SetX(tempVoxel2.at(0)->GetX());
+                point2.SetY(tempVoxel2.at(0)->GetY());
+                point2.SetZ(tempVoxel2.at(0)->GetZ());
+                std::cout << "point1: " << point1.X() << ", " << point1.Y() << ", " << point1.Z() << std::endl;
+                std::cout << "point2: " << point2.X() << ", " << point2.Y() << ", " << point2.Z() << std::endl;
+                TVector3 neutronLine;
+                if (point2.Z() > point1.Z()) {
+                    neutronLine.SetX(point2.X() - point1.X());
+                    neutronLine.SetY(point2.Y() - point1.Y());
+                    neutronLine.SetZ(point2.Z() - point1.Z());
+                } else {
+                    neutronLine.SetX(point1.X() - point2.X());
+                    neutronLine.SetY(point1.Y() - point2.Y());
+                    neutronLine.SetZ(point1.Z() - point2.Z());
+                }
+                double ang = beamLine.Angle(neutronLine);
+                std::cout << "ang: " << ang << std::endl;
+                angle->Fill(ang);
+            } else if (sfgdClusters.size() == 2) {
+                vector<VoxelManager*> tempVoxel1 = sfgdClusters[0];
+                vector<VoxelManager*> tempVoxel2 = sfgdClusters[1];
+                TVector3 point1;
+                point1.SetX(tempVoxel1.at(0)->GetX());
+                point1.SetY(tempVoxel1.at(0)->GetY());
+                point1.SetZ(tempVoxel1.at(0)->GetZ());
+                TVector3 point2;
+                point2.SetX(tempVoxel2.at(0)->GetX());
+                point2.SetY(tempVoxel2.at(0)->GetY());
+                point2.SetZ(tempVoxel2.at(0)->GetZ());
+                TVector3 neutronLine;
+                if (point2.Z() > point1.Z()) {
+                    neutronLine.SetX(point2.X() - point1.X());
+                    neutronLine.SetY(point2.Y() - point1.Y());
+                    neutronLine.SetZ(point2.Z() - point1.Z());
+                } else {
+                    neutronLine.SetX(point1.X() - point2.X());
+                    neutronLine.SetY(point1.Y() - point2.Y());
+                    neutronLine.SetZ(point1.Z() - point2.Z());
+                }
+                double ang = beamLine.Angle(neutronLine);
+                std::cout << "point1: " << point1.X() << ", " << point1.Y() << ", " << point1.Z() << std::endl;
+                std::cout << "point2: " << point2.X() << ", " << point2.Y() << ", " << point2.Z() << std::endl;
+                std::cout << "ang: " << ang << std::endl;
+                angle->Fill(ang);
+            } else {
+                vector<VoxelManager*> tempVoxel1 = sfgdClusters[0];
+                vector<VoxelManager*> tempVoxel2 = usjClusters[0];
+                TVector3 point1;
+                point1.SetX(tempVoxel1.at(0)->GetX());
+                point1.SetY(tempVoxel1.at(0)->GetY());
+                point1.SetZ(tempVoxel1.at(0)->GetZ());
+                TVector3 point2;
+                point2.SetX(tempVoxel2.at(0)->GetX()+8);
+                point2.SetY(tempVoxel2.at(0)->GetY());
+                point2.SetZ(tempVoxel2.at(0)->GetZ()+112+48);
+                TVector3 neutronLine;
+                if (point2.Z() > point1.Z()) {
+                    neutronLine.SetX(point2.X() - point1.X());
+                    neutronLine.SetY(point2.Y() - point1.Y());
+                    neutronLine.SetZ(point2.Z() - point1.Z());
+                } else {
+                    neutronLine.SetX(point1.X() - point2.X());
+                    neutronLine.SetY(point1.Y() - point2.Y());
+                    neutronLine.SetZ(point1.Z() - point2.Z());
+                }
+                double ang = beamLine.Angle(neutronLine);
+                std::cout << "usjClusters.size(): " << usjClusters.size() << std::endl;
+                std::cout << "sfgdClusters.size(): " << sfgdClusters.size() << std::endl;
+                std::cout << "point1: " << point1.X() << ", " << point1.Y() << ", " << point1.Z() << std::endl;
+                std::cout << "point2: " << point2.X() << ", " << point2.Y() << ", " << point2.Z() << std::endl;
+                std::cout << "ang: " << ang << std::endl;
+                angle->Fill(ang);
+            }
+        }
+    */
+    }
+    //TCanvas* can = new TCanvas();
+    //can->Divide(2,1);
+    //can->cd(1);
+    //angle->Draw();
+    //can->cd(2);
+    //energy->Draw();
+}
+
+void DoData() {
+    TH1D* angle = new TH1D("angle", "angle", 50,0,0);
+    TH1D* energy = new TH1D("energy", "energy", 20,0,0);
+    double threshold = 20;
+    TFile *inputFile  = new TFile("/Users/gwon/beamtest/data/2020/232/MCR0_Run_232_SubRun_01_2020_12_12_09_41_27__events.root","READ");
+    TTree* tree = (TTree*) inputFile->Get("AllEvents");
+    Event* unpackEvent = new Event(); tree->SetBranchAddress("Event", &unpackEvent);
+
+    for (int iev = 0; iev < tree->GetEntries(); iev++) {
+        tree->GetEntry(iev);
+        std::cout << "iev: " << iev << std::endl;
+
+        TClonesArray * unpackHits = unpackEvent->GetHits();
+
+        vector<Hit*> usjHits = {};
+        vector<Hit*> sfgdHits = {};
+        int N = unpackEvent->GetNHits();
+        for (int i = 0; i < N; ++i) {
+            Hit* tempHit = (Hit*)unpackEvent->GetHits()->At(i);
+
+            bool isUSJ = false;
+            if (tempHit->GetFEB() > 27)
+                isUSJ = true;
+
+            if (!isUSJ && tempHit->GetPE() > threshold) {
+                if (tempHit->GetDt() > -340 && tempHit->GetDt() < 360)
+                    sfgdHits.push_back(tempHit);
+            }
+            if (isUSJ && tempHit->GetPE() > threshold) {
+                if (tempHit->GetDt() > -325 && tempHit->GetDt() < 360)
+                    usjHits.push_back(tempHit);
             }
         }
 
